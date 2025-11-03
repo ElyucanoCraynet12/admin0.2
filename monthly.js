@@ -19,8 +19,6 @@ const monthlyApp = initializeApp(monthlyFirebaseConfig, 'monthlyApp');
 const monthlyDb = getDatabase(monthlyApp);
 
 const monthInput = document.getElementById('monthInput');
-const deviceSelect = document.getElementById('deviceSelect');
-const refreshBtn = document.getElementById('refreshBtn');
 const tableBody = document.getElementById('monthlyTable');
 
 const statSamples = document.getElementById('statSamples');
@@ -237,18 +235,6 @@ async function loadMonthlyData() {
 
   data = data.map(mapReading).filter(r => Number.isFinite(r.timestamp) && r.timestamp >= monthStart && r.timestamp < monthEnd);
 
-  // Optional device filter
-  const deviceId = deviceSelect.value || '';
-  if (deviceId) {
-    data = data.filter(r => (r.deviceId || r.sensorId || '').toString() === deviceId);
-  }
-
-  // Populate device selector options from current dataset
-  const uniqueDevices = Array.from(new Set(data.map(r => (r.deviceId || r.sensorId || '').toString()).filter(Boolean)));
-  const current = deviceSelect.value;
-  deviceSelect.innerHTML = '<option value="">All devices</option>' + uniqueDevices.map(d=>`<option value="${d}">${d}</option>`).join('');
-  if (uniqueDevices.includes(current)) deviceSelect.value = current;
-
   // Table
   tableBody.innerHTML = '';
   const fmt = (v) => (Number.isFinite(Number(v)) ? Number(v).toFixed(1) : '');
@@ -303,8 +289,6 @@ async function loadMonthlyData() {
       raw = snap.val();
       // Re-run the same rendering steps quickly
       let live = normalizeRows(raw).map(mapReading).filter(rec => Number.isFinite(rec.timestamp) && rec.timestamp >= monthStart && rec.timestamp < monthEnd);
-      const deviceId = deviceSelect.value || '';
-      if (deviceId) live = live.filter(x => (x.deviceId || '').toString() === deviceId);
       // Rebuild table
       tableBody.innerHTML = '';
       live.sort((a,b)=> (a.timestamp||0) - (b.timestamp||0));
@@ -355,9 +339,7 @@ function initDefaults() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initDefaults();
-  refreshBtn.addEventListener('click', loadMonthlyData);
   monthInput.addEventListener('change', loadMonthlyData);
-  deviceSelect.addEventListener('change', loadMonthlyData);
   loadMonthlyData();
 });
 
