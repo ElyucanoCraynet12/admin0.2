@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Reading Analytics</title>
+    <link rel="icon" href="img/elyucano.png" type="image/jpg">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Even spacing and layout fixes */
+        .main-content, .site-footer {
+            margin-left: 0 !important; /* Override sidebar margin from style.css */
+        }
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .monthly-container > .card,
+        .monthly-container > .stats-row {
+            margin-bottom: 1.5rem; /* Add consistent vertical spacing */
+        }
+
+        /* Default styles from before */
+        .monthly-container { max-width: 1100px; margin: 0 auto; padding: 1rem; }
+        .header-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+        .month-picker { display: flex; gap: .5rem; align-items: center; }
+        .month-picker input, .month-picker select { padding: .5rem .75rem; border-radius: 8px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text-color); }
+        .grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+        .card .card-body table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: fixed;
+        }
+        .card .card-body th, .card .card-body td {
+            padding: .7rem 1rem;
+            border-bottom: 1px solid var(--card-border);
+            text-align: left;
+            width: 20%;
+        }
+        .card .card-body th {
+            background: var(--card-bg);
+            font-weight: 500;
+            /* Softer background for header */
+        }
+        .card .card-body td {
+            background: rgba(255,255,255,0.03);
+        }
+        .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: .75rem; }
+        .stat-mini { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: .9rem; text-align: center; }
+        .stat-mini h4 { margin: 0 0 .25rem 0; font-size: .9rem; opacity: .8; }
+        .stat-mini div { font-size: 1.25rem; font-weight: 700; }
+        .actions { display: flex; gap: .5rem; }
+        .btn-sm { padding: .45rem .8rem; border-radius: 8px; border: none; background: var(--secondary-color); color: var(--dark-bg); font-weight: 600; cursor: pointer; }
+        /* Ensure chart block has a pleasant height similar to Filters */
+        #monthlyChart { display:block; width:100%; height:320px; }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    </head>
+<body class="dark-theme">
+    <main class="main-content">
+        <header class="main-header" role="banner" aria-label="Main Header">
+            <div class="header-left">
+                <h1>Monthly Analytics</h1>
+            </div>
+            <div class="actions">
+                <a href="dashboard.html" class="btn-sm" aria-label="Back to Dashboard">Back to Dashboard</a>
+            </div>
+        </header>
+
+        <div class="monthly-container">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Filters</h2>
+                </div>
+                <div class="card-body">
+                    <div class="month-picker">
+                        <label for="monthInput">Month</label>
+                        <input id="monthInput" type="month" />
+                        <label for="deviceSelect">Device</label>
+                        <select id="deviceSelect">
+                            <option value="">All devices</option>
+                        </select>
+                        <button id="refreshBtn" class="btn-sm">Refresh</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-row" style="margin: 1rem 0;">
+                <div class="stat-mini"><h4>Samples</h4><div id="statSamples">0</div></div>
+                <div class="stat-mini"><h4>Avg Temp (°C)</h4><div id="statTemp">0.0</div></div>
+                <div class="stat-mini"><h4>Avg pH</h4><div id="statPh">0.0</div></div>
+                <div class="stat-mini"><h4>Avg O2 (mg/L)</h4><div id="statOxy">0.0</div></div>
+                <div class="stat-mini"><h4>Avg Turbidity</h4><div id="statTurb">0.0</div></div>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-header"><h2>Trends (Daily)</h2></div>
+                    <div class="card-body">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h2>Readings</h2></div>
+                    <div class="card-body" style="max-height: 520px; overflow: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date/Time</th>
+                                    <th>Temp (°C)</th>
+                                    <th>pH</th>
+                                    <th>O2 (mg/L)</th>
+                                    <th>Turbidity (NTU)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="monthlyTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="site-footer">
+            <div class="footer-content">
+                <div class="footer-section about">
+                    <h3 class="logo-text"><span data-translate-key="eyucano_crayfish">EYUCANO Crayfish</span>Monitoring</h3>
+                    <p>
+                        Smart aquaculture monitoring for modern crayfish farming.
+                        Providing real-time insights for healthier yields.
+                    </p>
+                </div>
+                <div class="footer-section footer-logo-container">
+                    <img src="img/elyucano.png" alt="Company Logo" class="footer-logo" style="border-radius: 50%;">
+                </div>
+                <div class="footer-section links">
+                    <h3 data-translate-key="quick_links">Quick Links</h3>
+                    <ul>
+                        <li><a href="dashboard.html" data-translate-key="dashboard">Dashboard</a></li>
+                        <li><a href="#" data-translate-key="sensors">Sensors</a></li>
+                        <li><a href="#" data-translate-key="about">About</a></li>
+                        <li><a href="#" data-translate-key="contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section social">
+                    <h3 class="footer-future" style="font-family: 'Bebas Neue', Arial, sans-serif; font-size: 22px; letter-spacing:0.05em; text-transform:uppercase; margin-left: 23px;">The Future Begins Here</h3>
+                    <ul class="footer-quick-links">
+                        <li><a href="https://ispsc.edu.ph/campuses/main-campus/">ISPSC MAIN CAMPUS</a></li>
+                        <li><a href="https://ispsc.edu.ph/campuses/santa-maria-campus/">ISPSC STA. MARIA</a></li>
+                        <li><a href="https://ispsc.edu.ph/campuses/santiago-campus/">ISPSC SANTIAGO</a></li>
+                        <li><a href="https://ispsc.edu.ph/campuses/narvacan-campus/">ISPSC NARVACAN</a></li>
+                        <li><a href="https://ispsc.edu.ph/campuses/tagudin-campus/">ISPSC TAGUDIN</a></li>
+                        <li><a href="https://ispsc.edu.ph/campuses/candon-city-campus/">ISPSC CANDON CITY</a></li>
+                        <li><a href="https://ispsc.edu.ph/campuses/cervantes-campus/">ISPSC CERVANTES</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; 2025 Crayfish Monitoring System | All Rights Reserved | @elyucano_crayfish | @Christian_Rosario |
+            </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script type="module">
+        // Primary Firebase app (same as dashboard) to support shared UI behaviors in script.js
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js';
+        import { getDatabase, ref, set, get, onValue, query, orderByChild, limitToLast, remove } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyB_sLjv_cJ_Vu0YQokofmtjfn90HnWV8y4",
+          authDomain: "elyucano-crayfishdb.firebaseapp.com",
+          databaseURL: "https://elyucano-crayfishdb-default-rtdb.firebaseio.com",
+          projectId: "elyucano-crayfishdb",
+          storageBucket: "elyucano-crayfishdb.firebasestorage.app",
+          messagingSenderId: "842995099575",
+          appId: "1:842995099575:web:61121aa174bd0b7f7eaa32",
+          measurementId: "G-TV1H7CW2J1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        try { getAnalytics(app); } catch (e) {}
+        const db = getDatabase(app);
+        window.firebaseDatabase = db;
+        window.firebaseRef = ref;
+        window.firebaseSet = set;
+        window.firebaseGet = async (r) => (await get(r));
+        window.firebaseOnValue = onValue;
+        window.firebaseQuery = query;
+        window.firebaseOrderByChild = orderByChild;
+        window.firebaseLimitToLast = limitToLast;
+        window.firebaseRemove = remove;
+    </script>
+    <script src="script.js"></script>
+    <script type="module" src="monthly.js"></script>
+    <script>
+        feather.replace();
+    </script>
+</body>
+</html>
+
+
